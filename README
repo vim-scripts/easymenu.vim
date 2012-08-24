@@ -1,0 +1,83 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=4190
+
+The problem statement is that creating and maintain Vim menus is painful.
+This plug-in provides a data-driven, hierarchical means of defining
+non-trivial menus for your users' consumption.
+
+Consider the following, simple, menu structure:
+
+|Test| File Edit ... Help
++-----------+
+| Module A  |______________
+| Module B >| Compile  F11 |
++===========| Run      F12 |
+            | ------------ |
+            | Obsolete     |
+            +==============+
+
+Here's the structure created with Vim's built-in commands:
+
+1amenu <silent> Test.Module\ A.Compile :make amod<CR>
+1amenu <silent> Test.Module\ A.Run :make testamod<CR>
+1amenu <silent> Test.Module\ B.Compile<Tab>F11 :make bmod<CR>
+1amenu <silent> Test.Module\ B.Run<Tab>F12 :make testbmod<CR>
+1amenu <silent> Test.Module\ B.Obsolete :call MyFunction()<CR>
+1amenu <silent> Test.Module\ B.-sep-
+1amenu <silent> disable Test.Module\ B.Obsolete
+
+Note the repetition of the hierarchical menu names and the backslash-
+escaping of spaces.
+
+The structure really gets messy as it scales up.  In order to defeat
+the repeated "higher-level" menu names, you could store them in Vim
+variables but that results in additional boilerplate (including the need
+to use execute rather than menu directly).
+
+With this plugin, the menus are represented in a recursive data structure:
+
+source easymenu.vim
+call g:LoadMenu(
+\ [
+\ {
+\   'text': 'Test',
+\   'priority': 1,
+\   'children': [
+\               {
+\                 'text': 'Module A',
+\                 'children': [
+\                             {
+\                               'text': 'Compile',
+\                               'command': ':make amod',
+\                             },
+\                             {
+\                               'text': 'Run',
+\                               'command': ':make testamod',
+\                             },
+\                             ],
+\               },
+\               {
+\                 'text': 'Module B',
+\                 'children': [
+\                             {
+\                               'text': 'Compile<Tab>F11',
+\                               'command': ':make bmod',
+\                             },
+\                             {
+\                               'text': 'Run<Tab>F12',
+\                               'command': ':make testbmod',
+\                             },
+\                             {
+\                               'text': '-sep-',
+\                             },
+\                             {
+\                               'text': 'Obsolete',
+\                               'able': 'disable',
+\                             },
+\                             ],
+\               },
+\               ],
+\ },
+\ ],
+\ )
+
+

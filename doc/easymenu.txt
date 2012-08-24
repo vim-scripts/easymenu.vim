@@ -1,0 +1,181 @@
+*easymenu.txt*	For Vim version 7.0	Last change: 2012 August 22
+*easymenu*	Data-driven, hierarchical Menu Creation for Vim Plug-ins.
+
+============================================================================
+CONTENTS                                                 *easymenu-contents*
+
+    1.Introduction................................|easymenu-introduction|
+    2.Installation................................|easymenu-install|
+    3.Usage Information...........................|easymenu-usage|
+    4.Changelog...................................|easymenu-changelog|
+
+============================================================================
+1. Introduction                                      *easymenu-introduction*
+
+The problem statement is that creating and maintain Vim menus is painful.
+This plug-in provides a data-driven, hierarchical means of defining
+non-trivial menus for your users' consumption.
+
+Consider the following, simple, menu structure:
+
+|Test| File Edit ... Help
++-----------+
+| Module A  |______________
+| Module B >| Compile  F11 |
++===========| Run      F12 |
+            | ------------ |
+            | Obsolete     |
+            +==============+
+
+Here's the structure created with Vim's built-in commands:
+
+1amenu <silent> Test.Module\ A.Compile :make amod<CR>
+1amenu <silent> Test.Module\ A.Run :make testamod<CR>
+1amenu <silent> Test.Module\ B.Compile<Tab>F11 :make bmod<CR>
+1amenu <silent> Test.Module\ B.Run<Tab>F12 :make testbmod<CR>
+1amenu <silent> Test.Module\ B.Obsolete :call MyFunction()<CR>
+1amenu <silent> Test.Module\ B.-sep-
+1amenu <silent> disable Test.Module\ B.Obsolete
+
+Note the repetition of the hierarchical menu names and the backslash-
+escaping of spaces.
+
+The structure really gets messy as it scales up.  In order to defeat
+the repeated "higher-level" menu names, you could store them in Vim
+variables but that results in additional boilerplate (including the need
+to use execute rather than menu directly).
+
+With this plugin, the menus are represented in a recursive data structure:
+
+source easymenu.vim
+call g:LoadMenu(
+\ [
+\ {
+\   'text': 'Test',
+\   'priority': 1,
+\   'children': [
+\               {
+\                 'text': 'Module A',
+\                 'children': [
+\                             {
+\                               'text': 'Compile',
+\                               'command': ':make amod',
+\                             },
+\                             {
+\                               'text': 'Run',
+\                               'command': ':make testamod',
+\                             },
+\                             ],
+\               },
+\               {
+\                 'text': 'Module B',
+\                 'children': [
+\                             {
+\                               'text': 'Compile<Tab>F11',
+\                               'command': ':make bmod',
+\                             },
+\                             {
+\                               'text': 'Run<Tab>F12',
+\                               'command': ':make testbmod',
+\                             },
+\                             {
+\                               'text': '-sep-',
+\                             },
+\                             {
+\                               'text': 'Obsolete',
+\                               'able': 'disable',
+\                             },
+\                             ],
+\               },
+\               ],
+\ },
+\ ],
+\ )
+
+Note that escaping spaces and the repetition of "higher-level" menu names
+have been eliminated.  All of the capability is still retained and the
+formatting can be varied to suit your own taste.
+
+============================================================================
+2. Installation                                           *easymenu-install*
+
+Place this documentation under the doc directory and the plugin under the
+plugin directory.
+
+Alternatively, the plugin can be sourced directly in your .vimrc or any
+other plug-in.
+
+============================================================================
+3. Usage Information                                        *easymenu-usage*
+
+The introduction has a pretty nice example of how to use the script.  The
+fastest way to get up to speed is to model your use after it.  This section
+will expand on each of the capabilities, one by one, and provide some tips
+about their usage.
+
+First, note that the data structure is made up of an array that contains one
+or more dictionaries.  Each dictionary may contain a 'children' key that
+is associated with another array of dictionaries, and so on.  This structure
+is passed to the g:LoadMenu function as a parameter to create the menus.
+
+(The global function should be exported via command but I couldn't get it
+to work without throwing an error about the argument (array expected).  If
+you know how to get this to work, please, be my guest and submit a new
+version!)
+
+The supported dictionary keys are:
+* text
+* mode
+* priority
+* command
+* able
+
+The text key is required and its associated value is a string, represented
+in VimScript as text between either single or double quotes ('' or "").
+
+Characters that must be escaped within associated values (dictated by
+VimScript itself) are: backslashes (\) and pipes (|), which are escaped by
+inserting a leading backslash (\\ or \|); and quotes (' or " depending on
+your usage), which are escaped by doubling the character ('' or "").
+
+As you may have guessed, line continuation in Vim, involves a leading
+backslash on the continued line.  You are free to structure the data
+structure however you see fit.
+
+Now, the menu command dictates that its text either be quoted as a string
+and/or have a number of additional characters escaped (whitespace, periods,
+etc.) but this plug-in will take care of that for you.
+
+Back to the text key.  It defines the name, or visible text, of the menu or
+menu item.  It follows the same special rules as described in :help menu,
+where & and <Tab> have special meanings.
+
+Separators can be created by providing a text value that both begins and
+ends with dashes.  (See the example in the introduction.)
+
+The mode key is optional and can be used to specify a mode of 'a', for all,
+'i' for insert, etc..  See :help amenu, imenu, etc..  The default has been
+set to all for this plug-in because that just felt reasonable for me,
+being the sole user when I wrote it.
+
+The priority key is optional and can be used to specify where the menu
+item is positioned.  The associated value should be numeric but will be
+interpreted as a string, so it may be specified in quotes but it doesn't
+have to be.  See :help menu for more information about menu priorities.
+
+The command key is required (with the exception of a separator) and can be
+used to specify the function or action to be performed with the menu item
+is selected.  The command will automatically be followed by <CR>, so you
+do not have to end your command with it.  See :help menu for more
+information on command formats.
+
+The able key is optional and can be used to enable or disable a menu item.  The valid values
+are 'enable' and 'disable'.  (See the example in the introduction.)
+
+============================================================================
+4. Changelog                                            *easymenu-changelog*
+
+   0.1.0 Initial upload.
+
+============================================================================
+vim:tw=76:ts=8:ft=help
